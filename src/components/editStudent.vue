@@ -15,7 +15,13 @@
       <button type="submit">Kirim</button>
     </form>
 
-    <p v-if="message">{{ message }}</p>
+    <div
+      v-if="message"
+      :class="['alert', isSuccess ? 'alert-success' : 'alert-danger']"
+      role="alert"
+    >
+      {{ message }}
+    </div>
   </div>
 </template>
 
@@ -61,6 +67,8 @@ const getProducts = async () => {
   }
 }
 
+const isSuccess = ref(false)
+
 const submitForm = async () => {
   try {
     const response = await axios.put(`${STRAPI_URL}/api/students/${studentId}`, {
@@ -68,9 +76,11 @@ const submitForm = async () => {
     })
     console.log('👍 Data mahasiswa berhasil diperbarui:', response.data)
     message.value = 'Data berhasil diupdate!'
+    isSuccess.value = true
   } catch (err) {
-    console.error('❌ Gagal mengupdate data:', err)
-    message.value = 'Gagal mengupdate data'
+    console.error('Gagal mengupdate data:', err)
+    message.value = '❌ Gagal mengupdate data'
+    isSuccess.value = false
   }
 }
 
@@ -116,13 +126,22 @@ button:hover {
   background-color: #1a252f;
 }
 
-.btn-hapus {
-  width: 100%;
-  padding: 10px;
-  background-color: #f08080;
+.alert {
+  padding: 1rem;
+  border-radius: 0.5rem;
   color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1rem;
+  margin-top: 1rem;
+}
+.alert-success {
+  background-color: #d4edda; /* hijau */
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.alert-danger {
+  background-color: #f44336; /* merah */
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }
 </style>
