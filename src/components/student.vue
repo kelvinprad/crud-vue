@@ -43,23 +43,46 @@
             <td>{{ formatDate(student.createdAt) }}</td>
             <td>{{ formatDate(student.updatedAt) }}</td>
             <td>
-              <router-link :to="{ name: 'edit', params: { id: student.documentId } }">
-                <button class="btn-edit">
+              <div class="btn-container">
+                <router-link :to="{ name: 'edit', params: { id: student.documentId } }">
+                  <button class="btn-edit">
+                    <i class="bi bi-pencil-fill"></i>
+                  </button>
+                </router-link>
+                <button class="btn-hapus" @click="deleteStudent(student.documentId)">
                   <i class="bi bi-trash-fill"></i>
                 </button>
-              </router-link>
-              <button class="btn-hapus" @click="deleteStudent(student.documentId)">
-                <i class="bi bi-trash-fill"></i>
-              </button>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
-      <div class="pagination">
-        <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
-        <span>Halaman {{ currentPage }} dari {{ totalPages }}</span>
-        <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
-      </div>
+      <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+          <li class="page-item" :class="{ disabled: currentPage === 1 }">
+            <a class="page-link" href="#" @click.prevent="prevPage">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+
+          <li
+            class="page-item"
+            v-for="page in totalPages"
+            :key="page"
+            :class="{ active: currentPage === page }"
+          >
+            <a class="page-link" href="#" @click.prevent="goToPage(page)">
+              {{ page }}
+            </a>
+          </li>
+
+          <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+            <a class="page-link" href="#" @click.prevent="nextPage">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
     </section>
   </main>
 </template>
@@ -99,6 +122,13 @@ const getProducts = async () => {
     totalPages.value = response.data.meta.pagination.pageCount
   } catch (err) {
     console.error('❌ Gagal mengambil data:', err)
+  }
+}
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    getProducts()
   }
 }
 
@@ -256,8 +286,27 @@ button:hover {
   background-color: #1a252f;
 }
 
+.btn-container {
+  display: flex;
+  gap: 8px; /* Jarak antara tombol */
+  justify-content: center; /* Bisa juga space-between atau flex-start */
+  align-items: center;
+}
+
+.btn-edit {
+  padding: 10px;
+  background-color: #3498db; /* Biru */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-edit:hover {
+  background-color: #2c80b4; /* Biru lebih gelap saat hover */
+}
+
 .btn-hapus {
-  width: 100%;
   padding: 10px;
   background-color: #f08080;
   color: white;
@@ -274,36 +323,36 @@ p {
   text-align: center;
   margin-top: 10px;
 }
+
+/*pagination*/
 .pagination {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  font-family: Arial, sans-serif;
+  list-style: none;
+  gap: 8px;
+  padding-left: 0;
 }
 
-.pagination button {
-  padding: 0.5rem 1rem;
+.page-item {
+  border-radius: 4px;
+}
+
+.page-item.disabled .page-link {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.page-item.active .page-link {
   background-color: #2c3e50;
   color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.pagination button:hover:not(:disabled) {
-  background-color: #34495e;
-}
-
-.pagination button:disabled {
-  background-color: #bdc3c7;
-  cursor: not-allowed;
-}
-
-.pagination span {
-  font-size: 1rem;
   font-weight: bold;
+}
+
+.page-link {
+  display: block;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  color: #2c3e50;
+  text-decoration: none;
+  border-radius: 4px;
 }
 </style>
