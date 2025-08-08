@@ -10,16 +10,23 @@
 
       <form @submit.prevent="submitForm">
         <div class="form-input">
-          <input v-model="form.nama" type="text" placeholder="Nama" required />
-          <input v-model="form.email" type="email" placeholder="Email" required />
-          <input v-model="form.no_hp" type="text" placeholder="No HP" required />
-          <input v-model="form.nim" type="text" placeholder="NIM" required />
+          <input v-model="form.nama" name="nama" type="text" placeholder="Nama" required />
+          <input v-model="form.email" name="email" type="email" placeholder="Email" required />
+          <input v-model="form.no_hp" name="no_hp" type="text" placeholder="No HP" required />
+          <input v-model="form.nim" name="nim" type="text" placeholder="NIM" required />
         </div>
         <button type="submit">Kirim</button>
       </form>
 
       <p v-if="message">{{ message }}</p>
     </div>
+
+    <input
+      v-model="searchQuery"
+      type="text"
+      placeholder="Cari nama, email, atau NIM..."
+      class="form-search"
+    />
 
     <section class="dashboard-table-container">
       <table class="dashboard-table">
@@ -35,7 +42,10 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="student in students" :key="student.id">
+          <tr v-if="filteredMahasiswa.length === 0">
+            <td colspan="7" class="no-data">Data tidak ditemukan</td>
+          </tr>
+          <tr v-for="student in filteredMahasiswa" :key="student.id">
             <td>{{ student.nama }}</td>
             <td>{{ student.email }}</td>
             <td>{{ student.no_hp }}</td>
@@ -92,23 +102,22 @@ defineOptions({
   name: 'MyComponent',
 })
 import 'bootstrap-icons/font/bootstrap-icons.css'
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import axios from 'axios'
 import dayjs from 'dayjs'
 import 'dayjs/locale/id'
+import { watch } from 'vue'
 
-const students = ref([])
 const STRAPI_URL = 'http://localhost:1337'
 
+const students = ref([])
+const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = 5
-const totalPages = ref(1)
 
 const getProducts = async () => {
   try {
-    const response = await axios.get(
-      `${STRAPI_URL}/api/students?populate=*&pagination[page]=${currentPage.value}&pagination[pageSize]=${pageSize}`,
-    )
+    const response = await axios.get(`${STRAPI_URL}/api/students?populate=*`)
     students.value = response.data.data.map((item) => ({
       id: item.id,
       documentId: item.documentId,
@@ -119,32 +128,35 @@ const getProducts = async () => {
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
     }))
-    totalPages.value = response.data.meta.pagination.pageCount
   } catch (err) {
     console.error('❌ Gagal mengambil data:', err)
   }
 }
 
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-    getProducts()
-  }
-}
+// Filtered Mahasiswa
+const filteredData = computed(() => {
+  const query = searchQuery.value.toLowerCase()
+  return students.value.filter(
+    (student) =>
+      student.nama.toLowerCase().includes(query) ||
+      student.email.toLowerCase().includes(query) ||
+      student.nim.toLowerCase().includes(query),
+  )
+})
 
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-    getProducts()
-  }
-}
+const totalPages = computed(() => {
+  return Math.ceil(filteredData.value.length / pageSize)
+})
 
-const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
-    getProducts()
-  }
-}
+const filteredMahasiswa = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  const end = start + pageSize
+  return filteredData.value.slice(start, end)
+})
+
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
 
 onMounted(() => {
   getProducts()
@@ -199,7 +211,24 @@ const deleteStudent = async (id) => {
   }
 }
 
-// Fitur Tampilan Tabel
+// Pagination
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
 </script>
 
 <style scoped>
@@ -272,6 +301,10 @@ input {
   border: 1px solid #ccc;
 }
 
+.form-search {
+  width: 250px;
+}
+
 button {
   width: 100%;
   padding: 10px;
@@ -322,6 +355,18 @@ button:hover {
 p {
   text-align: center;
   margin-top: 10px;
+}
+
+.no-data {
+  text-align: center;
+  padding: 20px;
+  font-size: 16px;
+  color: #6c757d; /* Abu-abu lembut */
+  background-color: #f8f9fa; /* Latar belakang terang */
+  border-radius: 8px;
+  font-style: italic;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.5s ease-in-out;
 }
 
 /*pagination*/
